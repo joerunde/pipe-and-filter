@@ -1,0 +1,30 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.pb.go
+*.so
+*.swp
+
+# Folders
+_obj
+_test
+.idea
+
+bin
+pkg
+vendor/bin
+vendor/pkg
+*.exe
+*.test
+*.prof
+
+*.log
+*.out
+/cucumber/*.html
+/cucumber/generated
+
+vendor/src/github.com/smartystreets/goconvey/web/client/reports/*.html
+vendor/src/github.com/smartystreets/goconvey/web/client/reports/*.txt
+data-prep-agent.iml
+awsom-report.csv
+docker/*
