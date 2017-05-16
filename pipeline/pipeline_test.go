@@ -1,15 +1,17 @@
-package pipe_and_filter
+package pipeline
 
 import (
 	"testing"
 	"fmt"
+	"github.ibm.com/Joseph-Runde/pipe-and-filter/examples/filters"
+	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 )
 
 func TestSingleFilterPipeline(t *testing.T) {
 
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []Filter{cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Cumulator{}})
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -32,7 +34,7 @@ func TestTwoFilterPipeline(t *testing.T) {
 
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []Filter{doubler{}, cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Doubler{}, filters.Cumulator{}})
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -54,7 +56,7 @@ func TestParallelPipeline(t *testing.T) {
 
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []Filter{atoi_parallel{}, doubler{}, cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}})
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -78,7 +80,7 @@ func TestParallelPipeline(t *testing.T) {
 func TestErrorReporting(t *testing.T) {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []Filter{atoi_parallel{}, doubler{}, cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}})
 	if err != nil {
 		fmt.Println(err)
 		t.Fail()
@@ -95,10 +97,10 @@ func TestErrorReporting(t *testing.T) {
 	if len(errs) != 2 {
 		t.Fail()
 	}
-	if errs[0].Code() != ATOI_ERROR_NOT_A_NUMBER {
+	if errs[0].Code() != filters.ATOI_ERROR_NOT_A_NUMBER {
 		t.Fail()
 	}
-	if errs[1].Code() != ATOI_ERROR_NOT_A_NUMBER {
+	if errs[1].Code() != filters.ATOI_ERROR_NOT_A_NUMBER {
 		t.Fail()
 	}
 

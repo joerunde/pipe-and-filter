@@ -1,4 +1,4 @@
-package pipe_and_filter
+package filter
 
 type CodedError interface {
 	error

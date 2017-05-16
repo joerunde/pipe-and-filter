@@ -1,22 +1,23 @@
-package pipe_and_filter
+package pipeline
 
 import (
 	"fmt"
 	"reflect"
+	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 )
 
 type Pipeline interface {
-	Run() ([]FilterOutput, []CodedError)
+	Run() ([]f.FilterOutput, []f.CodedError)
 }
 
-func New(input FilterChannel, filters []Filter) (Pipeline, error) {
-	errorChan := make(chan CodedError, 10)
-	filterRunners := make([]filterRunner, len(filters))
+func New(input f.FilterChannel, filters []f.Filter) (Pipeline, error) {
+	errorChan := make(chan f.CodedError, 10)
+	filterRunners := make([]f.FilterRunner, len(filters))
 	nextInputChannel := input
 	var err error
 
 	for i, filter := range filters {
-		filterRunners[i], err = newFilterRunner(filter, nextInputChannel, errorChan)
+		filterRunners[i], err = f.NewFilterRunner(filter, nextInputChannel, errorChan)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +31,7 @@ func New(input FilterChannel, filters []Filter) (Pipeline, error) {
 		return nil, fmt.Errorf("Last step's output was not a channel! Unexpected type: %s", t)
 	}
 	// go bonkers here: wrap the last step's output in a generic channel, so we can accumulate outputs alongside errors
-	wrappedOutputChannel := make(chan FilterOutput, 100)
+	wrappedOutputChannel := make(chan f.FilterOutput, 100)
 	go func() {
 		v := reflect.ValueOf(lastChan)
 		for {
@@ -49,22 +50,22 @@ func New(input FilterChannel, filters []Filter) (Pipeline, error) {
 type pipeline struct {
 	Pipeline
 
-	input         FilterChannel
-	runners       []filterRunner
-	errorChannel  chan CodedError
+	input         f.FilterChannel
+	runners       []f.FilterRunner
+	errorChannel  chan f.CodedError
 
-	outputChannel chan FilterOutput
+	outputChannel chan f.FilterOutput
 }
 
-func (p pipeline) Run() ([]FilterOutput, []CodedError) {
+func (p pipeline) Run() ([]f.FilterOutput, []f.CodedError) {
 
 	for _, runner := range p.runners {
 		runner.Start()
 	}
 
 	//lastStepOuputChannel := (p.runners[len(p.runners)-1].GetOutputChan()).(chan interface{})
-	errors := make([]CodedError, 0)
-	pipelineOutput := make([]FilterOutput, 0)
+	errors := make([]f.CodedError, 0)
+	pipelineOutput := make([]f.FilterOutput, 0)
 
 	for {
 		select {

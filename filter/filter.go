@@ -1,4 +1,4 @@
-package pipe_and_filter
+package filter
 
 import (
 	"fmt"
@@ -16,13 +16,13 @@ type Filter interface {
 	GetParallelWorkerCount() int
 }
 
-type filterRunner interface {
+type FilterRunner interface {
 	Start()
 	GetOutputChan() FilterChannel
 }
 
 type runner struct {
-	filterRunner
+	FilterRunner
 
 	filter        Filter
 	errorChannel  chan CodedError
@@ -33,7 +33,7 @@ type runner struct {
 	closedChannel chan interface{}
 }
 
-func newFilterRunner(filter Filter, input FilterChannel, errorChan chan CodedError) (filterRunner, error) {
+func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan CodedError) (FilterRunner, error) {
 
 	t := reflect.TypeOf(input)
 	if t.Kind() != reflect.Chan {
