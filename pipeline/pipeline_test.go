@@ -5,7 +5,17 @@ import (
 	"fmt"
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/examples/filters"
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+	//"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
+
+type PipelineTestSuite struct {
+	suite.Suite
+}
+
+func TestPipelineTestSuite(t *testing.T) {
+	suite.Run(t, new(PipelineTestSuite))
+}
 
 func TestSingleFilterPipeline(t *testing.T) {
 

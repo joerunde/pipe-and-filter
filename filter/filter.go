@@ -35,6 +35,16 @@ type runner struct {
 
 func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan CodedError) (FilterRunner, error) {
 
+	if filter == nil {
+		return nil, fmt.Errorf("Unexpected error from the pipeline: Filter cannot be nil")
+	}
+	if input == nil {
+		return nil, fmt.Errorf("Unexpected error from the pipeline: Input cannot be nil")
+	}
+	if errorChan == nil {
+		return nil, fmt.Errorf("Unexpected error from the pipeline: Error channel cannot be nil")
+	}
+
 	t := reflect.TypeOf(input)
 	if t.Kind() != reflect.Chan {
 		return nil, fmt.Errorf("Input was not a channel! Unexpected type: %T", input)
@@ -49,6 +59,10 @@ func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan CodedErr
 	}
 
 	output := filter.MakeOutputChannel()
+	if output == nil || reflect.TypeOf(output).Kind() != reflect.Chan {
+		return nil, fmt.Errorf("MakeOutputChannel returned type: %T, output must be a channel", output)
+	}
+
 	return runner{filter: filter, errorChannel: errorChan, inputChannel: input, outputChannel: output}, nil
 }
 
@@ -71,6 +85,9 @@ func (r runner) monitor() {
 	// Unfortunate reflection during pipeline runtime. But, we're fairly certain that this is indeed a channel
 	v := reflect.ValueOf(r.outputChannel)
 	v.Close()
+
+	// No more filter instances are running. Hopefully they waited for the input channel to close.
+	// TODO: In case they didn't, we'll eat up the rest of the inputs. NOM NOM NOM
 }
 
 func (r runner) wrapRun() {
