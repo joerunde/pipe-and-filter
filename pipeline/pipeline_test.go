@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"testing"
-	"fmt"
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/examples/filters"
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 	//"github.com/stretchr/testify/mock"
@@ -17,16 +16,11 @@ func TestPipelineTestSuite(t *testing.T) {
 	suite.Run(t, new(PipelineTestSuite))
 }
 
-func TestSingleFilterPipeline(t *testing.T) {
-
+func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 	input := make(chan int, 10)
 
 	pipe, err := New(input, []f.Filter{filters.Cumulator{}})
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-		return
-	}
+	p.Nil(err)
 
 	input <- 1
 	input <- 7
@@ -34,22 +28,14 @@ func TestSingleFilterPipeline(t *testing.T) {
 	close(input)
 
 	outs, _ := pipe.Run()
-	if outs[0] != 18 {
-		t.Fail()
-	}
-
+	p.Equal(18, outs[0])
 }
 
-func TestTwoFilterPipeline(t *testing.T) {
-
+func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 	input := make(chan int, 10)
 
 	pipe, err := New(input, []f.Filter{filters.Doubler{}, filters.Cumulator{}})
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-		return
-	}
+	p.Nil(err)
 
 	input <- 1
 	input <- 7
@@ -57,21 +43,14 @@ func TestTwoFilterPipeline(t *testing.T) {
 	close(input)
 
 	outs, _ := pipe.Run()
-	if outs[0] != 36 {
-		t.Fail()
-	}
+	p.Equal(36, outs[0])
 }
 
-func TestParallelPipeline(t *testing.T) {
-
+func (p *PipelineTestSuite) TestParallelPipeline() {
 	input := make(chan string, 100)
 
 	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}})
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-		return
-	}
+	p.Nil(err)
 
 	i := 0
 	for i < 50 {
@@ -81,21 +60,14 @@ func TestParallelPipeline(t *testing.T) {
 	close(input)
 
 	outs, _ := pipe.Run()
-	if outs[0] != 100 {
-		t.Fail()
-	}
-
+	p.Equal(100, outs[0])
 }
 
-func TestErrorReporting(t *testing.T) {
+func (p *PipelineTestSuite) TestErrorReporting() {
 	input := make(chan string, 100)
 
 	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}})
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-		return
-	}
+	p.Nil(err)
 
 	input <- "1"
 	input <- "two"
@@ -104,15 +76,7 @@ func TestErrorReporting(t *testing.T) {
 	close(input)
 
 	_, errs := pipe.Run()
-	if len(errs) != 2 {
-		t.Fail()
-	}
-	if errs[0].Code() != filters.ATOI_ERROR_NOT_A_NUMBER {
-		t.Fail()
-	}
-	if errs[1].Code() != filters.ATOI_ERROR_NOT_A_NUMBER {
-		t.Fail()
-	}
-
+	p.Equal(2, len(errs))
+	p.Equal(filters.ATOI_ERROR_NOT_A_NUMBER, errs[0].Code())
+	p.Equal(filters.ATOI_ERROR_NOT_A_NUMBER, errs[1].Code())
 }
-
