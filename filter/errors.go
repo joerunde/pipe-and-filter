@@ -1,5 +1,7 @@
 package filter
 
+import "fmt"
+
 type CodedError interface {
 	error
 	Code() int
@@ -11,8 +13,8 @@ type basicError struct {
 	code int
 }
 
-func Errorf(code int, message string) CodedError {
-	return basicError{message: message, code: code}
+func Errorf(code int, message string, a ...interface{}) CodedError {
+	return basicError{message: fmt.Sprintf(message, a...), code: code}
 }
 
 func (b basicError) Error() string {
