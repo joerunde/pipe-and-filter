@@ -1,4 +1,4 @@
-package filter
+package pipe_error
 
 import "fmt"
 

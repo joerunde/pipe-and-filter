@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
 )
 
 type FilterRunnerTestSuite struct {
@@ -22,14 +23,14 @@ func (f *FilterRunnerTestSuite) SetupTest() {
 
 func (f *FilterRunnerTestSuite) TestItRejectsNonChannelInputTypes() {
 	notAChannel := "not a channel"
-	runner, err := NewFilterRunner(f.mock, notAChannel, make(chan CodedError))
+	runner, err := NewFilterRunner(f.mock, notAChannel, make(chan e.CodedError))
 	f.Nil(runner)
 	f.NotNil(err)
 }
 
 func (f *FilterRunnerTestSuite) TestItRejectsWrongInputChannelTypes() {
 	f.mock.On("VerifyInputChannel").Return(false).Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan CodedError))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.CodedError))
 	f.Nil(runner)
 	f.NotNil(err)
 }
@@ -37,7 +38,7 @@ func (f *FilterRunnerTestSuite) TestItRejectsWrongInputChannelTypes() {
 func (f *FilterRunnerTestSuite) TestItRejectsWorkerCountsLessThanOne() {
 	f.mock.On("VerifyInputChannel").Return(false).Once()
 	f.mock.On("GetParallelWorkerCount").Return(0).Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan CodedError))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.CodedError))
 	f.Nil(runner)
 	f.NotNil(err)
 }
@@ -46,7 +47,7 @@ func (f *FilterRunnerTestSuite) TestItRejectsNonChannelOutputTypes() {
 	f.mock.On("VerifyInputChannel").Return(true).Once()
 	f.mock.On("GetParallelWorkerCount").Return(1).Once()
 	f.mock.On("MakeOutputChannel").Return("not a channel").Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan CodedError))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.CodedError))
 	f.Nil(runner)
 	f.NotNil(err)
 }
@@ -56,7 +57,7 @@ func (f *FilterRunnerTestSuite) TestItCreatesAFilterRunner() {
 	f.mock.On("VerifyInputChannel").Return(true).Once()
 	f.mock.On("GetParallelWorkerCount").Return(1).Once()
 	f.mock.On("MakeOutputChannel").Return(output).Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan CodedError))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.CodedError))
 	f.NotNil(runner)
 	f.Nil(err)
 	f.Equal(output, runner.GetOutputChan())
@@ -73,7 +74,7 @@ func (f *FilterRunnerTestSuite) TestItEatsUnusedInputsAndReportsErrorsForEach() 
 	inputChannel <- 2
 	inputChannel <- 3
 
-	errorChan := make(chan CodedError, 100) // space for errors
+	errorChan := make(chan e.CodedError, 100) // space for errors
 	runner, _ := NewFilterRunner(f.mock, inputChannel, errorChan)
 	f.NotNil(runner)
 
@@ -99,7 +100,7 @@ type MockFilter struct {
 	mock.Mock
 }
 
-func (m *MockFilter) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- CodedError) {
+func (m *MockFilter) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- e.CodedError) {
 	//args := m.Called()
 	return
 }

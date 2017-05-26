@@ -1,12 +1,15 @@
 package filters
 
-import f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+import (
+	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
+)
 
 type Doubler struct {
 	f.Filter
 }
 
-func (d Doubler) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- f.CodedError) {
+func (d Doubler) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.CodedError) {
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)
 

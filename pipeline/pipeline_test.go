@@ -6,6 +6,7 @@ import (
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 	//"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
 )
 
 type PipelineTestSuite struct {
@@ -19,7 +20,7 @@ func TestPipelineTestSuite(t *testing.T) {
 func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []f.Filter{filters.Cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Cumulator{}}, []e.ErrorListener{})
 	p.Nil(err)
 
 	input <- 1
@@ -34,7 +35,7 @@ func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []f.Filter{filters.Doubler{}, filters.Cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Doubler{}, filters.Cumulator{}}, []e.ErrorListener{})
 	p.Nil(err)
 
 	input <- 1
@@ -49,7 +50,7 @@ func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 func (p *PipelineTestSuite) TestParallelPipeline() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []e.ErrorListener{})
 	p.Nil(err)
 
 	i := 0
@@ -66,7 +67,7 @@ func (p *PipelineTestSuite) TestParallelPipeline() {
 func (p *PipelineTestSuite) TestErrorReporting() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []e.ErrorListener{})
 	p.Nil(err)
 
 	input <- "1"
@@ -79,4 +80,29 @@ func (p *PipelineTestSuite) TestErrorReporting() {
 	p.Equal(2, len(errs))
 	p.Equal(filters.ATOI_ERROR_NOT_A_NUMBER, errs[0].Code())
 	p.Equal(filters.ATOI_ERROR_NOT_A_NUMBER, errs[1].Code())
+}
+
+func (p *PipelineTestSuite) TestItCallsErrorListeners() {
+	input := make(chan string, 100)
+
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}}, []e.ErrorListener{mockErrorListener{}})
+	p.Nil(err)
+
+	input <- "not a number"
+	close(input)
+
+	_, errs := pipe.Run()
+	p.Equal(1, len(errs))
+	p.Equal(true, globalMockErrorListened)
+}
+
+var globalMockErrorListened = false
+
+type mockErrorListener struct {
+	e.ErrorListener
+}
+
+func (m mockErrorListener) HandleError(err e.CodedError) bool {
+	globalMockErrorListened = true
+	return true
 }

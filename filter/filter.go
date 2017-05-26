@@ -3,6 +3,7 @@ package filter
 import (
 	"fmt"
 	"reflect"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
 )
 
 const UNREAD_INPUT_ERROR = -123456789
@@ -12,7 +13,7 @@ type FilterChannel interface{}
 type FilterOutput interface{}
 
 type Filter interface {
-	Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- CodedError)
+	Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- e.CodedError)
 	VerifyInputChannel(inputChannel FilterChannel) bool
 	MakeOutputChannel() FilterChannel
 	GetParallelWorkerCount() int
@@ -27,7 +28,7 @@ type runner struct {
 	FilterRunner
 
 	filter        Filter
-	errorChannel  chan CodedError
+	errorChannel  chan e.CodedError
 	inputChannel  FilterChannel
 	outputChannel FilterChannel
 
@@ -35,7 +36,7 @@ type runner struct {
 	closedChannel chan interface{}
 }
 
-func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan CodedError) (FilterRunner, error) {
+func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan e.CodedError) (FilterRunner, error) {
 
 	if filter == nil {
 		return nil, fmt.Errorf("Unexpected error from the pipeline: Filter cannot be nil")
@@ -92,7 +93,7 @@ func (r runner) monitor() {
 	// In case they didn't, we'll eat up the rest of the inputs. NOM NOM NOM
 	vi := reflect.ValueOf(r.inputChannel)
 	for in, ok := vi.Recv(); ok; in, ok = vi.Recv() {
-		r.errorChannel <- Errorf(UNREAD_INPUT_ERROR, "%v", in)
+		r.errorChannel <- e.Errorf(UNREAD_INPUT_ERROR, "%v", in)
 	}
 }
 
