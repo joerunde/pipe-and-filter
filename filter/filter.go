@@ -5,6 +5,8 @@ import (
 	"reflect"
 )
 
+const UNREAD_INPUT_ERROR = -123456789
+
 type FilterChannel interface{}
 
 type FilterOutput interface{}
@@ -87,7 +89,11 @@ func (r runner) monitor() {
 	v.Close()
 
 	// No more filter instances are running. Hopefully they waited for the input channel to close.
-	// TODO: In case they didn't, we'll eat up the rest of the inputs. NOM NOM NOM
+	// In case they didn't, we'll eat up the rest of the inputs. NOM NOM NOM
+	vi := reflect.ValueOf(r.inputChannel)
+	for in, ok := vi.Recv(); ok; in, ok = vi.Recv() {
+		r.errorChannel <- Errorf(UNREAD_INPUT_ERROR, "%v", in)
+	}
 }
 
 func (r runner) wrapRun() {

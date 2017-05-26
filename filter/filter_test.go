@@ -1,9 +1,10 @@
 package filter
 
 import (
-	"testing"
-	"github.com/stretchr/testify/suite"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+	"testing"
+	"time"
 )
 
 type FilterRunnerTestSuite struct {
@@ -59,6 +60,35 @@ func (f *FilterRunnerTestSuite) TestItCreatesAFilterRunner() {
 	f.NotNil(runner)
 	f.Nil(err)
 	f.Equal(output, runner.GetOutputChan())
+}
+
+func (f *FilterRunnerTestSuite) TestItEatsUnusedInputsAndReportsErrorsForEach() {
+	output := make(chan interface{})
+	f.mock.On("VerifyInputChannel").Return(true).Once()
+	f.mock.On("GetParallelWorkerCount").Return(1) // Called more times while running
+	f.mock.On("MakeOutputChannel").Return(output).Once()
+
+	inputChannel := make(chan int, 3)
+	inputChannel <- 1
+	inputChannel <- 2
+	inputChannel <- 3
+
+	errorChan := make(chan CodedError, 100) // space for errors
+	runner, _ := NewFilterRunner(f.mock, inputChannel, errorChan)
+	f.NotNil(runner)
+
+	runner.Start()
+	// Wait for the output to be closed after the filter's Run() is called
+	<- output
+
+	// We'll need to wait a tiny bit more, since the output is closed before unused inputs are eaten
+	time.Sleep(time.Millisecond)
+
+	f.Equal(0, len(inputChannel))
+	f.Equal(3, len(errorChan))
+	f.Equal(UNREAD_INPUT_ERROR, (<-errorChan).Code())
+	f.Equal(UNREAD_INPUT_ERROR, (<-errorChan).Code())
+	f.Equal(UNREAD_INPUT_ERROR, (<-errorChan).Code())
 }
 
 // ********************************
