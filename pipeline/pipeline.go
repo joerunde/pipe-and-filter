@@ -11,6 +11,15 @@ type Pipeline interface {
 	Run() ([]f.FilterOutput, []e.CodedError)
 }
 
+func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.ErrorListener) (Pipeline, error) {
+	in := make(chan interface{})
+	close(in)
+
+	wrapper := f.SourceFilterWrapper{SourceFilter: source}
+	filters = append([]f.Filter{wrapper}, filters...)
+	return New(in, filters, listeners)
+}
+
 func New(input f.FilterChannel, filters []f.Filter, listeners []e.ErrorListener) (Pipeline, error) {
 	errorChan := make(chan e.CodedError, 10)
 	filterRunners := make([]f.FilterRunner, len(filters))

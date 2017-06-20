@@ -4,7 +4,6 @@ import (
 	"testing"
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/examples/filters"
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
-	//"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
 )
@@ -62,6 +61,14 @@ func (p *PipelineTestSuite) TestParallelPipeline() {
 
 	outs, _ := pipe.Run()
 	p.Equal(100, outs[0])
+}
+
+func (p *PipelineTestSuite) TestPipelineWithSourceFilter() {
+	pipe, err := NewWithSource(filters.IntSource{}, []f.Filter{filters.Cumulator{}}, []e.ErrorListener{})
+	p.Nil(err)
+
+	outs, _ := pipe.Run()
+	p.Equal(filters.INT_SOURCE_TOTAL, outs[0])
 }
 
 func (p *PipelineTestSuite) TestErrorReporting() {
