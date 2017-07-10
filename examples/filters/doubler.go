@@ -9,7 +9,7 @@ type Doubler struct {
 	f.Filter
 }
 
-func (d Doubler) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.CodedError) {
+func (d Doubler) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.Message) {
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)
 

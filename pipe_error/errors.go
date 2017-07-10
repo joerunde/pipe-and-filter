@@ -2,25 +2,25 @@ package pipe_error
 
 import "fmt"
 
-type CodedError interface {
+type Message interface {
 	error
 	Code() int
 }
 
-type basicError struct {
-	CodedError
+type basicMessage struct {
+	Message
 	message string
 	code int
 }
 
-func Errorf(code int, message string, a ...interface{}) CodedError {
-	return basicError{message: fmt.Sprintf(message, a...), code: code}
+func Errorf(code int, message string, a ...interface{}) Message {
+	return basicMessage{message: fmt.Sprintf(message, a...), code: code}
 }
 
-func (b basicError) Error() string {
+func (b basicMessage) Error() string {
 	return b.message
 }
 
-func (b basicError) Code() int {
+func (b basicMessage) Code() int {
 	return b.code
 }

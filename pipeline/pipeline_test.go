@@ -19,7 +19,7 @@ func TestPipelineTestSuite(t *testing.T) {
 func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []f.Filter{filters.Cumulator{}}, []e.ErrorListener{})
+	pipe, err := New(input, []f.Filter{filters.Cumulator{}}, []e.MessageListener{})
 	p.Nil(err)
 
 	input <- 1
@@ -34,7 +34,7 @@ func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []f.Filter{filters.Doubler{}, filters.Cumulator{}}, []e.ErrorListener{})
+	pipe, err := New(input, []f.Filter{filters.Doubler{}, filters.Cumulator{}}, []e.MessageListener{})
 	p.Nil(err)
 
 	input <- 1
@@ -49,7 +49,7 @@ func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 func (p *PipelineTestSuite) TestParallelPipeline() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []e.ErrorListener{})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []e.MessageListener{})
 	p.Nil(err)
 
 	i := 0
@@ -64,7 +64,7 @@ func (p *PipelineTestSuite) TestParallelPipeline() {
 }
 
 func (p *PipelineTestSuite) TestPipelineWithSourceFilter() {
-	pipe, err := NewWithSource(filters.IntSource{}, []f.Filter{filters.Cumulator{}}, []e.ErrorListener{})
+	pipe, err := NewWithSource(filters.IntSource{}, []f.Filter{filters.Cumulator{}}, []e.MessageListener{})
 	p.Nil(err)
 
 	outs, _ := pipe.Run()
@@ -74,7 +74,7 @@ func (p *PipelineTestSuite) TestPipelineWithSourceFilter() {
 func (p *PipelineTestSuite) TestErrorReporting() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []e.ErrorListener{})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []e.MessageListener{})
 	p.Nil(err)
 
 	input <- "1"
@@ -89,10 +89,10 @@ func (p *PipelineTestSuite) TestErrorReporting() {
 	p.Equal(filters.ATOI_ERROR_NOT_A_NUMBER, errs[1].Code())
 }
 
-func (p *PipelineTestSuite) TestItCallsErrorListeners() {
+func (p *PipelineTestSuite) TestItCallsMessageListeners() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}}, []e.ErrorListener{mockErrorListener{}})
+	pipe, err := New(input, []f.Filter{filters.Atoi_parallel{}}, []e.MessageListener{mockErrorListener{}})
 	p.Nil(err)
 
 	input <- "not a number"
@@ -106,10 +106,10 @@ func (p *PipelineTestSuite) TestItCallsErrorListeners() {
 var globalMockErrorListened = false
 
 type mockErrorListener struct {
-	e.ErrorListener
+	e.MessageListener
 }
 
-func (m mockErrorListener) HandleError(err e.CodedError) bool {
+func (m mockErrorListener) Handle(err e.Message) bool {
 	globalMockErrorListened = true
 	return true
 }

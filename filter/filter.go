@@ -13,7 +13,7 @@ type FilterChannel interface{}
 type FilterOutput interface{}
 
 type Filter interface {
-	Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- e.CodedError)
+	Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- e.Message)
 	VerifyInputChannel(inputChannel FilterChannel) bool
 	MakeOutputChannel() FilterChannel
 	GetParallelWorkerCount() int
@@ -28,7 +28,7 @@ type runner struct {
 	FilterRunner
 
 	filter        Filter
-	errorChannel  chan e.CodedError
+	errorChannel  chan e.Message
 	inputChannel  FilterChannel
 	outputChannel FilterChannel
 
@@ -36,7 +36,7 @@ type runner struct {
 	closedChannel chan interface{}
 }
 
-func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan e.CodedError) (FilterRunner, error) {
+func NewFilterRunner(filter Filter, input FilterChannel, errorChan chan e.Message) (FilterRunner, error) {
 
 	if filter == nil {
 		return nil, fmt.Errorf("Unexpected error from the pipeline: Filter cannot be nil")

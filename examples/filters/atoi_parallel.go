@@ -11,7 +11,7 @@ type Atoi_parallel struct {
 	f.Filter
 }
 
-func (a Atoi_parallel) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.CodedError) {
+func (a Atoi_parallel) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.Message) {
 	input := (verifiedInputChan).(chan string)
 	output := (outputChannel).(chan int)
 

@@ -8,10 +8,10 @@ import (
 )
 
 type Pipeline interface {
-	Run() ([]f.FilterOutput, []e.CodedError)
+	Run() ([]f.FilterOutput, []e.Message)
 }
 
-func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.ErrorListener) (Pipeline, error) {
+func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.MessageListener) (Pipeline, error) {
 	in := make(chan interface{})
 	close(in)
 
@@ -20,8 +20,8 @@ func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.Erro
 	return New(in, filters, listeners)
 }
 
-func New(input f.FilterChannel, filters []f.Filter, listeners []e.ErrorListener) (Pipeline, error) {
-	errorChan := make(chan e.CodedError, 10)
+func New(input f.FilterChannel, filters []f.Filter, listeners []e.MessageListener) (Pipeline, error) {
+	errorChan := make(chan e.Message, 10)
 	filterRunners := make([]f.FilterRunner, len(filters))
 	nextInputChannel := input
 	var err error
@@ -68,20 +68,20 @@ type pipeline struct {
 
 	input          f.FilterChannel
 	runners        []f.FilterRunner
-	errorListeners []e.ErrorListener
-	errorChannel   chan e.CodedError
+	errorListeners []e.MessageListener
+	errorChannel   chan e.Message
 
 	outputChannel chan f.FilterOutput
 }
 
-func (p pipeline) Run() ([]f.FilterOutput, []e.CodedError) {
+func (p pipeline) Run() ([]f.FilterOutput, []e.Message) {
 
 	for _, runner := range p.runners {
 		runner.Start()
 	}
 
 	//lastStepOuputChannel := (p.runners[len(p.runners)-1].GetOutputChan()).(chan interface{})
-	errors := make([]e.CodedError, 0)
+	errors := make([]e.Message, 0)
 	pipelineOutput := make([]f.FilterOutput, 0)
 
 	for {
@@ -100,9 +100,9 @@ func (p pipeline) Run() ([]f.FilterOutput, []e.CodedError) {
 	}
 }
 
-func (p pipeline) handleError(errs []e.CodedError, err e.CodedError) []e.CodedError {
+func (p pipeline) handleError(errs []e.Message, err e.Message) []e.Message {
 	for _, l := range p.errorListeners {
-		l.HandleError(err)
+		l.Handle(err)
 		// TODO: notify user of which errors were handled and which were not
 		// Probably some breaking API changes to come later :D
 	}

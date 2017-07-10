@@ -23,7 +23,7 @@ func (c Cumulator) MakeOutputChannel() f.FilterChannel {
 	return make(chan int, 1)
 }
 
-func (c Cumulator) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.CodedError) {
+func (c Cumulator) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.Message) {
 	res := 0
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)

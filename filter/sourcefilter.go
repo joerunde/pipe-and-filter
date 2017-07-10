@@ -5,7 +5,7 @@ import (
 )
 
 type SourceFilter interface {
-	Run(outputChannel FilterChannel, errorChan chan<- e.CodedError)
+	Run(outputChannel FilterChannel, errorChan chan<- e.Message)
 	MakeOutputChannel() FilterChannel
 	GetParallelWorkerCount() int
 }
@@ -18,6 +18,6 @@ func (s SourceFilterWrapper) VerifyInputChannel(inputChannel FilterChannel) bool
 	return true
 }
 
-func (s SourceFilterWrapper) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- e.CodedError) {
+func (s SourceFilterWrapper) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- e.Message) {
 	s.SourceFilter.Run(outputChannel, errorChan)
 }

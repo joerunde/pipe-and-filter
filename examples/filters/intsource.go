@@ -11,7 +11,7 @@ type IntSource struct {
 	f.SourceFilter
 }
 
-func (d IntSource) Run(outputChannel f.FilterChannel, errorChan chan<- e.CodedError) {
+func (d IntSource) Run(outputChannel f.FilterChannel, errorChan chan<- e.Message) {
 	output := (outputChannel).(chan int)
 
 	output <- 1;
