@@ -5,7 +5,7 @@ import (
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/examples/filters"
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 	"github.com/stretchr/testify/suite"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type PipelineTestSuite struct {

@@ -2,7 +2,7 @@ package filters
 
 import (
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type Doubler struct {

@@ -5,7 +5,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type FilterRunnerTestSuite struct {

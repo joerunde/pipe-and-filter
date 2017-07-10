@@ -3,7 +3,7 @@ package filter
 import (
 	"fmt"
 	"reflect"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_error"
+	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 const UNREAD_INPUT_ERROR = -123456789
