@@ -13,7 +13,7 @@ type basicMessage struct {
 	code int
 }
 
-func Errorf(code int, message string, a ...interface{}) Message {
+func Format(code int, message string, a ...interface{}) Message {
 	return basicMessage{message: fmt.Sprintf(message, a...), code: code}
 }
 

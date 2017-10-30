@@ -20,9 +20,10 @@ func (a Atoi_parallel) Run(verifiedInputChan f.FilterChannel, outputChannel f.Fi
 		time.Sleep(100 * time.Millisecond)
 
 		if err != nil {
-			errorChan <- e.Errorf(ATOI_ERROR_NOT_A_NUMBER, "%v is not a number", x)
+			errorChan <- e.Format(ATOI_ERROR_NOT_A_NUMBER, "%v is not a number", x)
+		} else {
+			output <- i
 		}
-		output <- i
 	}
 }
 

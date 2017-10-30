@@ -5,10 +5,11 @@ import (
 	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 	"reflect"
+	"time"
 )
 
 type Pipeline interface {
-	Run() ([]f.FilterOutput, []e.Message)
+	Run() ([]f.FilterOutput, []e.DecoratedMessage)
 }
 
 func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.MessageListener) (Pipeline, error) {
@@ -21,13 +22,13 @@ func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.Mess
 }
 
 func New(input f.FilterChannel, filters []f.Filter, listeners []e.MessageListener) (Pipeline, error) {
-	errorChan := make(chan e.Message, 10)
+	decoratedMessageChannel := make(chan e.DecoratedMessage, 10)
 	filterRunners := make([]f.FilterRunner, len(filters))
 	nextInputChannel := input
 	var err error
 
 	for i, filter := range filters {
-		filterRunners[i], err = f.NewFilterRunner(filter, nextInputChannel, errorChan)
+		filterRunners[i], err = f.NewFilterRunner(filter, nextInputChannel, decoratedMessageChannel)
 		if err != nil {
 			return nil, err
 		}
@@ -55,57 +56,63 @@ func New(input f.FilterChannel, filters []f.Filter, listeners []e.MessageListene
 	}()
 
 	return pipeline{
-		input:          input,
-		runners:        filterRunners,
-		errorChannel:   errorChan,
-		outputChannel:  wrappedOutputChannel,
-		errorListeners: listeners,
+		input:            input,
+		runners:          filterRunners,
+		messageChannel:   decoratedMessageChannel,
+		outputChannel:    wrappedOutputChannel,
+		messageListeners: listeners,
 	}, nil
 }
 
 type pipeline struct {
 	Pipeline
 
-	input          f.FilterChannel
-	runners        []f.FilterRunner
-	errorListeners []e.MessageListener
-	errorChannel   chan e.Message
+	input            f.FilterChannel
+	runners          []f.FilterRunner
+	messageListeners []e.MessageListener
+	messageChannel   chan e.DecoratedMessage
 
 	outputChannel chan f.FilterOutput
 }
 
-func (p pipeline) Run() ([]f.FilterOutput, []e.Message) {
-
+func (p pipeline) Run() ([]f.FilterOutput, []e.DecoratedMessage) {
+	startTime := time.Now()
 	for _, runner := range p.runners {
-		runner.Start()
+		runner.Start(startTime)
 	}
 
 	//lastStepOuputChannel := (p.runners[len(p.runners)-1].GetOutputChan()).(chan interface{})
-	errors := make([]e.Message, 0)
+	messages := make([]e.DecoratedMessage, 0)
 	pipelineOutput := make([]f.FilterOutput, 0)
 
 	for {
 		select {
-		case err := <-p.errorChannel:
-			errors = p.handleError(errors, err)
+		case msg := <-p.messageChannel:
+			messages = p.handleMessage(messages, msg)
 		case out, open := <-p.outputChannel:
 			if !open {
-				for len(p.errorChannel) > 0 {
-					errors = p.handleError(errors, <-p.errorChannel)
+				for len(p.messageChannel) > 0 {
+					messages = p.handleMessage(messages, <-p.messageChannel)
 				}
-				return pipelineOutput, errors
+				endOfPipeMessage := e.DecoratedMessage{
+					Message:       e.Format(e.PIPELINE_COMPLETE, "Pipeline complete"),
+					Written:       time.Now(),
+					Source:        e.PIPELINE,
+					PipelineStart: startTime,
+				}
+				messages = p.handleMessage(messages, endOfPipeMessage)
+				return pipelineOutput, messages
 			}
 			pipelineOutput = append(pipelineOutput, out)
 		}
 	}
 }
 
-func (p pipeline) handleError(errs []e.Message, err e.Message) []e.Message {
-	for _, l := range p.errorListeners {
-		l.Handle(err)
-		// TODO: notify user of which errors were handled and which were not
-		// Probably some breaking API changes to come later :D
+func (p pipeline) handleMessage(msgs []e.DecoratedMessage, msg e.DecoratedMessage) []e.DecoratedMessage {
+	for _, l := range p.messageListeners {
+		l.Handle(msg)
+		// TODO: notify user of which errors were handled and which were not, probably in another message
 	}
 
-	return append(errs, err)
+	return append(msgs, msg)
 }

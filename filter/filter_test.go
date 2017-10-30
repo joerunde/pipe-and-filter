@@ -23,14 +23,14 @@ func (f *FilterRunnerTestSuite) SetupTest() {
 
 func (f *FilterRunnerTestSuite) TestItRejectsNonChannelInputTypes() {
 	notAChannel := "not a channel"
-	runner, err := NewFilterRunner(f.mock, notAChannel, make(chan e.Message))
+	runner, err := NewFilterRunner(f.mock, notAChannel, make(chan e.DecoratedMessage))
 	f.Nil(runner)
 	f.NotNil(err)
 }
 
 func (f *FilterRunnerTestSuite) TestItRejectsWrongInputChannelTypes() {
 	f.mock.On("VerifyInputChannel").Return(false).Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.Message))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.DecoratedMessage))
 	f.Nil(runner)
 	f.NotNil(err)
 }
@@ -38,7 +38,7 @@ func (f *FilterRunnerTestSuite) TestItRejectsWrongInputChannelTypes() {
 func (f *FilterRunnerTestSuite) TestItRejectsWorkerCountsLessThanOne() {
 	f.mock.On("VerifyInputChannel").Return(false).Once()
 	f.mock.On("GetParallelWorkerCount").Return(0).Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.Message))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.DecoratedMessage))
 	f.Nil(runner)
 	f.NotNil(err)
 }
@@ -47,7 +47,7 @@ func (f *FilterRunnerTestSuite) TestItRejectsNonChannelOutputTypes() {
 	f.mock.On("VerifyInputChannel").Return(true).Once()
 	f.mock.On("GetParallelWorkerCount").Return(1).Once()
 	f.mock.On("MakeOutputChannel").Return("not a channel").Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.Message))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.DecoratedMessage))
 	f.Nil(runner)
 	f.NotNil(err)
 }
@@ -57,7 +57,7 @@ func (f *FilterRunnerTestSuite) TestItCreatesAFilterRunner() {
 	f.mock.On("VerifyInputChannel").Return(true).Once()
 	f.mock.On("GetParallelWorkerCount").Return(1).Once()
 	f.mock.On("MakeOutputChannel").Return(output).Once()
-	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.Message))
+	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan e.DecoratedMessage))
 	f.NotNil(runner)
 	f.Nil(err)
 	f.Equal(output, runner.GetOutputChan())
@@ -73,9 +73,10 @@ func (f *FilterRunnerTestSuite) TestItEatsUnusedInputsAndReportsErrorsForEach() 
 	inputChannel <- 1
 	inputChannel <- 2
 	inputChannel <- 3
+	close(inputChannel)
 
-	errorChan := make(chan e.Message, 100) // space for errors
-	runner, _ := NewFilterRunner(f.mock, inputChannel, errorChan)
+	decoratedMessageChan := make(chan e.DecoratedMessage, 100) // space for errors
+	runner, _ := NewFilterRunner(f.mock, inputChannel, decoratedMessageChan)
 	f.NotNil(runner)
 
 	runner.Start()
@@ -86,10 +87,11 @@ func (f *FilterRunnerTestSuite) TestItEatsUnusedInputsAndReportsErrorsForEach() 
 	time.Sleep(time.Millisecond)
 
 	f.Equal(0, len(inputChannel))
-	f.Equal(3, len(errorChan))
-	f.Equal(UNREAD_INPUT_ERROR, (<-errorChan).Code())
-	f.Equal(UNREAD_INPUT_ERROR, (<-errorChan).Code())
-	f.Equal(UNREAD_INPUT_ERROR, (<-errorChan).Code())
+	f.Equal(4, len(decoratedMessageChan))
+	f.Equal(e.UNREAD_INPUT_ERROR, (<-decoratedMessageChan).Code())
+	f.Equal(e.UNREAD_INPUT_ERROR, (<-decoratedMessageChan).Code())
+	f.Equal(e.UNREAD_INPUT_ERROR, (<-decoratedMessageChan).Code())
+	f.Equal(e.FILTER_COMPLETE, (<-decoratedMessageChan).Code())
 }
 
 // ********************************
