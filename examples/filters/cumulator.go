@@ -2,7 +2,6 @@ package filters
 
 import (
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 
@@ -23,7 +22,7 @@ func (c Cumulator) MakeOutputChannel() pipeline.FilterChannel {
 	return make(chan int, 1)
 }
 
-func (c Cumulator) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
+func (c Cumulator) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- pipeline.Message) {
 	res := 0
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)

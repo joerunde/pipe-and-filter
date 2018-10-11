@@ -2,14 +2,13 @@ package filters
 
 import (
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type Doubler struct {
 	pipeline.Filter
 }
 
-func (d Doubler) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
+func (d Doubler) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- pipeline.Message) {
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)
 

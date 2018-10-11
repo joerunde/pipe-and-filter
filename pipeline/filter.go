@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"fmt"
-	m "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 	"reflect"
 	"time"
 )
@@ -14,17 +13,15 @@ const MESSAGE_BUFFER_SIZE = 1024
 //
 type FilterChannel interface{}
 
-type FilterOutput interface{}
-
 type Filter interface {
-	Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- m.Message)
+	Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- Message)
 	VerifyInputChannel(inputChannel FilterChannel) bool
 	MakeOutputChannel() FilterChannel
 	GetParallelWorkerCount() int
 }
 
 type SourceFilter interface {
-	Run(outputChannel FilterChannel, errorChan chan<- m.Message)
+	Run(outputChannel FilterChannel, errorChan chan<- Message)
 	MakeOutputChannel() FilterChannel
 	GetParallelWorkerCount() int
 }
@@ -37,7 +34,7 @@ func (s sourceFilterWrapper) VerifyInputChannel(inputChannel FilterChannel) bool
 	return true
 }
 
-func (s sourceFilterWrapper) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- m.Message) {
+func (s sourceFilterWrapper) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- Message) {
 	s.SourceFilter.Run(outputChannel, errorChan)
 }
 
@@ -52,8 +49,8 @@ type runner struct {
 	filterRunner
 
 	filter                  Filter
-	messageChannel          chan m.Message
-	decoratedMessageChannel chan m.DecoratedMessage
+	messageChannel          chan Message
+	decoratedMessageChannel chan DecoratedMessage
 	inputChannel            FilterChannel
 	outputChannel           FilterChannel
 
@@ -63,7 +60,7 @@ type runner struct {
 	pipelineStart           time.Time
 }
 
-func NewFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan chan m.DecoratedMessage) (filterRunner, error) {
+func NewFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan chan DecoratedMessage) (filterRunner, error) {
 
 	if filter == nil {
 		return nil, fmt.Errorf("Unexpected error from the pipeline: Filter cannot be nil")
@@ -93,7 +90,7 @@ func NewFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan ch
 		return nil, fmt.Errorf("MakeOutputChannel returned type: %T, output must be a channel", output)
 	}
 
-	messageChan := make(chan m.Message, MESSAGE_BUFFER_SIZE)
+	messageChan := make(chan Message, MESSAGE_BUFFER_SIZE)
 	return runner{
 		filter:                  filter,
 		messageChannel:          messageChan,
@@ -130,9 +127,9 @@ func (r runner) monitor() {
 	// In case they didn't, we'll eat up the rest of the inputs. NOM NOM NOM
 	vi := reflect.ValueOf(r.inputChannel)
 	for in, ok := vi.Recv(); ok; in, ok = vi.Recv() {
-		r.decoratedMessageChannel <- r.decorateMessage(m.Format(m.UNREAD_INPUT_ERROR, "%v", in), m.PIPELINE)
+		r.decoratedMessageChannel <- r.decorateMessage(Format(UNREAD_INPUT_ERROR, "%v", in), PIPELINE)
 	}
-	r.decoratedMessageChannel <- r.decorateMessage(m.Format(m.FILTER_COMPLETE, "Filter complete"), m.PIPELINE)
+	r.decoratedMessageChannel <- r.decorateMessage(Format(FILTER_COMPLETE, "Filter complete"), PIPELINE)
 
 	// Close off the message channel for this filter's workers, then wait for the signal that all messages have
 	// been decorated and sent back to the pipeline
@@ -147,7 +144,7 @@ func (r runner) monitor() {
 
 func (r runner) decorateMessages() {
 	for msg := range r.messageChannel {
-		r.decoratedMessageChannel <- r.decorateMessage(msg, m.FILTER)
+		r.decoratedMessageChannel <- r.decorateMessage(msg, FILTER)
 	}
 	r.finishedMessagesChannel <- 0
 }
@@ -157,8 +154,8 @@ func (r runner) wrapRun() {
 	r.finishedWorkersChannel <- 1
 }
 
-func (r runner) decorateMessage(msg m.Message, source m.MessageSource) m.DecoratedMessage {
-	return m.DecoratedMessage{
+func (r runner) decorateMessage(msg Message, source MessageSource) DecoratedMessage {
+	return DecoratedMessage{
 		FilterType:    fmt.Sprintf("%T", r.filter),
 		Source:        source,
 		Written:       time.Now(),

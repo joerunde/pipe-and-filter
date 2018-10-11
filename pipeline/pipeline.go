@@ -2,16 +2,17 @@ package pipeline
 
 import (
 	"fmt"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 	"reflect"
 	"time"
 )
 
 type Pipeline interface {
-	Run() ([]FilterOutput, []e.DecoratedMessage)
+	Run() ([]FilterOutput, []DecoratedMessage)
 }
 
-func NewWithSource(source SourceFilter, filters []Filter, listeners []e.MessageListener) (Pipeline, error) {
+type FilterOutput interface{}
+
+func NewWithSource(source SourceFilter, filters []Filter, listeners []MessageSubscriber) (Pipeline, error) {
 	in := make(chan interface{})
 	close(in)
 
@@ -20,8 +21,8 @@ func NewWithSource(source SourceFilter, filters []Filter, listeners []e.MessageL
 	return New(in, filters, listeners)
 }
 
-func New(input FilterChannel, filters []Filter, listeners []e.MessageListener) (Pipeline, error) {
-	decoratedMessageChannel := make(chan e.DecoratedMessage, MESSAGE_BUFFER_SIZE)
+func New(input FilterChannel, filters []Filter, listeners []MessageSubscriber) (Pipeline, error) {
+	decoratedMessageChannel := make(chan DecoratedMessage, MESSAGE_BUFFER_SIZE)
 	filterRunners := make([]filterRunner, len(filters))
 	nextInputChannel := input
 	var err error
@@ -68,13 +69,13 @@ type pipeline struct {
 
 	input            FilterChannel
 	runners          []filterRunner
-	messageListeners []e.MessageListener
-	messageChannel   chan e.DecoratedMessage
+	messageListeners []MessageSubscriber
+	messageChannel   chan DecoratedMessage
 
 	outputChannel chan FilterOutput
 }
 
-func (p pipeline) Run() ([]FilterOutput, []e.DecoratedMessage) {
+func (p pipeline) Run() ([]FilterOutput, []DecoratedMessage) {
 	// TODO: Send a periodic message with the sizes of all the runners' output channels
 
 	startTime := time.Now()
@@ -83,7 +84,7 @@ func (p pipeline) Run() ([]FilterOutput, []e.DecoratedMessage) {
 	}
 
 	//lastStepOuputChannel := (p.runners[len(p.runners)-1].GetOutputChan()).(chan interface{})
-	messages := make([]e.DecoratedMessage, 0)
+	messages := make([]DecoratedMessage, 0)
 	pipelineOutput := make([]FilterOutput, 0)
 
 	for {
@@ -95,10 +96,10 @@ func (p pipeline) Run() ([]FilterOutput, []e.DecoratedMessage) {
 				for len(p.messageChannel) > 0 {
 					messages = p.handleMessage(messages, <-p.messageChannel)
 				}
-				endOfPipeMessage := e.DecoratedMessage{
-					Message:       e.Format(e.PIPELINE_COMPLETE, "Pipeline complete"),
+				endOfPipeMessage := DecoratedMessage{
+					Message:       Format(PIPELINE_COMPLETE, "Pipeline complete"),
 					Written:       time.Now(),
-					Source:        e.PIPELINE,
+					Source:        PIPELINE,
 					PipelineStart: startTime,
 				}
 				messages = p.handleMessage(messages, endOfPipeMessage)
@@ -109,7 +110,7 @@ func (p pipeline) Run() ([]FilterOutput, []e.DecoratedMessage) {
 	}
 }
 
-func (p pipeline) handleMessage(msgs []e.DecoratedMessage, msg e.DecoratedMessage) []e.DecoratedMessage {
+func (p pipeline) handleMessage(msgs []DecoratedMessage, msg DecoratedMessage) []DecoratedMessage {
 	for _, l := range p.messageListeners {
 		l.Handle(msg)
 		// TODO: notify user of which errors were handled and which were not, probably in another message

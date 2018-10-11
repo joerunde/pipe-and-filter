@@ -4,14 +4,13 @@ import (
 	"strconv"
 	"time"
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type Atoi_parallel struct {
 	pipeline.Filter
 }
 
-func (a Atoi_parallel) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
+func (a Atoi_parallel) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- pipeline.Message) {
 	input := (verifiedInputChan).(chan string)
 	output := (outputChannel).(chan int)
 
@@ -20,7 +19,7 @@ func (a Atoi_parallel) Run(verifiedInputChan pipeline.FilterChannel, outputChann
 		time.Sleep(100 * time.Millisecond)
 
 		if err != nil {
-			errorChan <- e.Format(ATOI_ERROR_NOT_A_NUMBER, "%v is not a number", x)
+			errorChan <- pipeline.Format(ATOI_ERROR_NOT_A_NUMBER, "%v is not a number", x)
 		} else {
 			output <- i
 		}

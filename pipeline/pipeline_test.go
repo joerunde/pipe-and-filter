@@ -4,7 +4,6 @@ import (
 	"testing"
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/examples/filters"
 	"github.com/stretchr/testify/suite"
-	m "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 	"github.com/stretchr/testify/mock"
 	. "github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
 )
@@ -21,7 +20,7 @@ func TestPipelineTestSuite(t *testing.T) {
 func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []Filter{filters.Cumulator{}}, []m.MessageListener{})
+	pipe, err := New(input, []Filter{filters.Cumulator{}}, []MessageSubscriber{})
 	p.Nil(err)
 
 	input <- 1
@@ -36,7 +35,7 @@ func (p *PipelineTestSuite) TestSingleFilterPipeline() {
 func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 	input := make(chan int, 10)
 
-	pipe, err := New(input, []Filter{filters.Doubler{}, filters.Cumulator{}}, []m.MessageListener{})
+	pipe, err := New(input, []Filter{filters.Doubler{}, filters.Cumulator{}}, []MessageSubscriber{})
 	p.Nil(err)
 
 	input <- 1
@@ -51,7 +50,7 @@ func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 func (p *PipelineTestSuite) TestParallelPipeline() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []m.MessageListener{})
+	pipe, err := New(input, []Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []MessageSubscriber{})
 	p.Nil(err)
 
 	i := 0
@@ -66,7 +65,7 @@ func (p *PipelineTestSuite) TestParallelPipeline() {
 }
 
 func (p *PipelineTestSuite) TestPipelineWithSourceFilter() {
-	pipe, err := NewWithSource(filters.IntSource{}, []Filter{filters.Cumulator{}}, []m.MessageListener{})
+	pipe, err := NewWithSource(filters.IntSource{}, []Filter{filters.Cumulator{}}, []MessageSubscriber{})
 	p.Nil(err)
 
 	outs, _ := pipe.Run()
@@ -76,7 +75,7 @@ func (p *PipelineTestSuite) TestPipelineWithSourceFilter() {
 func (p *PipelineTestSuite) TestItReturnsAllMessagesAtTheEnd() {
 	input := make(chan string, 100)
 
-	pipe, err := New(input, []Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []m.MessageListener{})
+	pipe, err := New(input, []Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []MessageSubscriber{})
 	p.Nil(err)
 
 	input <- "1"
@@ -91,8 +90,8 @@ func (p *PipelineTestSuite) TestItReturnsAllMessagesAtTheEnd() {
 
 	msgMap := countMessageCodes(msgs)
 	p.Equal(2, msgMap[filters.ATOI_ERROR_NOT_A_NUMBER])
-	p.Equal(3, msgMap[m.FILTER_COMPLETE])
-	p.Equal(1, msgMap[m.PIPELINE_COMPLETE])
+	p.Equal(3, msgMap[FILTER_COMPLETE])
+	p.Equal(1, msgMap[PIPELINE_COMPLETE])
 }
 
 func (p *PipelineTestSuite) TestItCallsMessageListeners() {
@@ -101,7 +100,7 @@ func (p *PipelineTestSuite) TestItCallsMessageListeners() {
 	expectedNumberOfMessages := 3
 	p.mock.On("Handle", mock.Anything).Return(true).Times(expectedNumberOfMessages)
 
-	pipe, err := New(input, []Filter{filters.Atoi_parallel{}}, []m.MessageListener{&p.mock})
+	pipe, err := New(input, []Filter{filters.Atoi_parallel{}}, []MessageSubscriber{&p.mock})
 	p.Nil(err)
 
 	input <- "not a number"
@@ -113,8 +112,8 @@ func (p *PipelineTestSuite) TestItCallsMessageListeners() {
 	p.Equal(3, len(msgs))
 	msgMap := countMessageCodes(p.mock.messages)
 	p.Equal(1, msgMap[filters.ATOI_ERROR_NOT_A_NUMBER])
-	p.Equal(1, msgMap[m.FILTER_COMPLETE])
-	p.Equal(1, msgMap[m.PIPELINE_COMPLETE])
+	p.Equal(1, msgMap[FILTER_COMPLETE])
+	p.Equal(1, msgMap[PIPELINE_COMPLETE])
 }
 
 func (p *PipelineTestSuite) TestItDecoratesMessagesWithTimestamps() {
@@ -123,16 +122,16 @@ func (p *PipelineTestSuite) TestItDecoratesMessagesWithTimestamps() {
 
 type spyMessageListener struct {
 	mock.Mock
-	messages []m.DecoratedMessage
+	messages []DecoratedMessage
 	foobar string
 }
 
-func (s *spyMessageListener) Handle(msg m.DecoratedMessage) bool {
+func (s *spyMessageListener) Handle(msg DecoratedMessage) bool {
 	s.messages = append(s.messages, msg)
 	return s.Called(msg).Bool(0)
 }
 
-func countMessageCodes(msgs []m.DecoratedMessage) map[int]int {
+func countMessageCodes(msgs []DecoratedMessage) map[int]int {
 	msgmap := make(map[int]int)
 	for _, msg := range(msgs) {
 		msgmap[msg.Code()] = msgmap[msg.Code()] + 1

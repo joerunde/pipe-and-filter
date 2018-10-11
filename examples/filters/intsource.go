@@ -2,7 +2,6 @@ package filters
 
 import (
 	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
-	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 const INT_SOURCE_TOTAL = 6
@@ -11,7 +10,7 @@ type IntSource struct {
 	pipeline.SourceFilter
 }
 
-func (d IntSource) Run(outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
+func (d IntSource) Run(outputChannel pipeline.FilterChannel, errorChan chan<- pipeline.Message) {
 	output := (outputChannel).(chan int)
 
 	output <- 1;
