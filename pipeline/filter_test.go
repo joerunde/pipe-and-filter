@@ -1,4 +1,4 @@
-package filter
+package pipeline_test
 
 import (
 	"github.com/stretchr/testify/mock"
@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
+	. "github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
 )
 
 type FilterRunnerTestSuite struct {
@@ -79,7 +80,7 @@ func (f *FilterRunnerTestSuite) TestItEatsUnusedInputsAndReportsErrorsForEach() 
 	runner, _ := NewFilterRunner(f.mock, inputChannel, decoratedMessageChan)
 	f.NotNil(runner)
 
-	runner.Start()
+	runner.Start(time.Now())
 	// Wait for the output to be closed after the filter's Run() is called
 	<- output
 

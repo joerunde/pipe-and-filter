@@ -1,15 +1,15 @@
 package filters
 
 import (
-	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type Doubler struct {
-	f.Filter
+	pipeline.Filter
 }
 
-func (d Doubler) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.Message) {
+func (d Doubler) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)
 
@@ -18,12 +18,12 @@ func (d Doubler) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterCh
 	}
 }
 
-func (d Doubler) VerifyInputChannel(inputChannel f.FilterChannel) bool {
+func (d Doubler) VerifyInputChannel(inputChannel pipeline.FilterChannel) bool {
 	_, ok := (inputChannel).(chan int)
 	return ok
 }
 
-func (d Doubler) MakeOutputChannel() f.FilterChannel {
+func (d Doubler) MakeOutputChannel() pipeline.FilterChannel {
 	return make(chan int, 10)
 }
 

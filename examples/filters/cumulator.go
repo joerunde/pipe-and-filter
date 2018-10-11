@@ -1,16 +1,16 @@
 package filters
 
 import (
-	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 
 type Cumulator struct {
-	f.Filter
+	pipeline.Filter
 }
 
-func (c Cumulator) VerifyInputChannel(inputChannel f.FilterChannel) bool {
+func (c Cumulator) VerifyInputChannel(inputChannel pipeline.FilterChannel) bool {
 	_, ok := (inputChannel).(chan int)
 	return ok
 }
@@ -19,11 +19,11 @@ func (c Cumulator) GetParallelWorkerCount() int {
 	return 1
 }
 
-func (c Cumulator) MakeOutputChannel() f.FilterChannel {
+func (c Cumulator) MakeOutputChannel() pipeline.FilterChannel {
 	return make(chan int, 1)
 }
 
-func (c Cumulator) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.Message) {
+func (c Cumulator) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
 	res := 0
 	input := (verifiedInputChan).(chan int)
 	output := (outputChannel).(chan int)

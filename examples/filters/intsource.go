@@ -1,17 +1,17 @@
 package filters
 
 import (
-	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 const INT_SOURCE_TOTAL = 6
 
 type IntSource struct {
-	f.SourceFilter
+	pipeline.SourceFilter
 }
 
-func (d IntSource) Run(outputChannel f.FilterChannel, errorChan chan<- e.Message) {
+func (d IntSource) Run(outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
 	output := (outputChannel).(chan int)
 
 	output <- 1;
@@ -19,7 +19,7 @@ func (d IntSource) Run(outputChannel f.FilterChannel, errorChan chan<- e.Message
 	output <- 3;
 }
 
-func (d IntSource) MakeOutputChannel() f.FilterChannel {
+func (d IntSource) MakeOutputChannel() pipeline.FilterChannel {
 	return make(chan int, 10)
 }
 

@@ -2,33 +2,32 @@ package pipeline
 
 import (
 	"fmt"
-	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 	"reflect"
 	"time"
 )
 
 type Pipeline interface {
-	Run() ([]f.FilterOutput, []e.DecoratedMessage)
+	Run() ([]FilterOutput, []e.DecoratedMessage)
 }
 
-func NewWithSource(source f.SourceFilter, filters []f.Filter, listeners []e.MessageListener) (Pipeline, error) {
+func NewWithSource(source SourceFilter, filters []Filter, listeners []e.MessageListener) (Pipeline, error) {
 	in := make(chan interface{})
 	close(in)
 
-	wrapper := f.SourceFilterWrapper{SourceFilter: source}
-	filters = append([]f.Filter{wrapper}, filters...)
+	wrapper := sourceFilterWrapper{SourceFilter: source}
+	filters = append([]Filter{wrapper}, filters...)
 	return New(in, filters, listeners)
 }
 
-func New(input f.FilterChannel, filters []f.Filter, listeners []e.MessageListener) (Pipeline, error) {
-	decoratedMessageChannel := make(chan e.DecoratedMessage, 10)
-	filterRunners := make([]f.FilterRunner, len(filters))
+func New(input FilterChannel, filters []Filter, listeners []e.MessageListener) (Pipeline, error) {
+	decoratedMessageChannel := make(chan e.DecoratedMessage, MESSAGE_BUFFER_SIZE)
+	filterRunners := make([]filterRunner, len(filters))
 	nextInputChannel := input
 	var err error
 
 	for i, filter := range filters {
-		filterRunners[i], err = f.NewFilterRunner(filter, nextInputChannel, decoratedMessageChannel)
+		filterRunners[i], err = NewFilterRunner(filter, nextInputChannel, decoratedMessageChannel)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +41,7 @@ func New(input f.FilterChannel, filters []f.Filter, listeners []e.MessageListene
 		return nil, fmt.Errorf("Last step's output was not a channel! Unexpected type: %s", t)
 	}
 	// go bonkers here: wrap the last step's output in a generic channel, so we can accumulate outputs alongside errors
-	wrappedOutputChannel := make(chan f.FilterOutput, 100)
+	wrappedOutputChannel := make(chan FilterOutput, 100)
 	go func() {
 		v := reflect.ValueOf(lastChan)
 		for {
@@ -67,15 +66,17 @@ func New(input f.FilterChannel, filters []f.Filter, listeners []e.MessageListene
 type pipeline struct {
 	Pipeline
 
-	input            f.FilterChannel
-	runners          []f.FilterRunner
+	input            FilterChannel
+	runners          []filterRunner
 	messageListeners []e.MessageListener
 	messageChannel   chan e.DecoratedMessage
 
-	outputChannel chan f.FilterOutput
+	outputChannel chan FilterOutput
 }
 
-func (p pipeline) Run() ([]f.FilterOutput, []e.DecoratedMessage) {
+func (p pipeline) Run() ([]FilterOutput, []e.DecoratedMessage) {
+	// TODO: Send a periodic message with the sizes of all the runners' output channels
+
 	startTime := time.Now()
 	for _, runner := range p.runners {
 		runner.Start(startTime)
@@ -83,7 +84,7 @@ func (p pipeline) Run() ([]f.FilterOutput, []e.DecoratedMessage) {
 
 	//lastStepOuputChannel := (p.runners[len(p.runners)-1].GetOutputChan()).(chan interface{})
 	messages := make([]e.DecoratedMessage, 0)
-	pipelineOutput := make([]f.FilterOutput, 0)
+	pipelineOutput := make([]FilterOutput, 0)
 
 	for {
 		select {

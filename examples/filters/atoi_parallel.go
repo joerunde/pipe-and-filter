@@ -3,15 +3,15 @@ package filters
 import (
 	"strconv"
 	"time"
-	f "github.ibm.com/Joseph-Runde/pipe-and-filter/filter"
+	"github.ibm.com/Joseph-Runde/pipe-and-filter/pipeline"
 	e "github.ibm.com/Joseph-Runde/pipe-and-filter/pipe_messages"
 )
 
 type Atoi_parallel struct {
-	f.Filter
+	pipeline.Filter
 }
 
-func (a Atoi_parallel) Run(verifiedInputChan f.FilterChannel, outputChannel f.FilterChannel, errorChan chan<- e.Message) {
+func (a Atoi_parallel) Run(verifiedInputChan pipeline.FilterChannel, outputChannel pipeline.FilterChannel, errorChan chan<- e.Message) {
 	input := (verifiedInputChan).(chan string)
 	output := (outputChannel).(chan int)
 
@@ -27,12 +27,12 @@ func (a Atoi_parallel) Run(verifiedInputChan f.FilterChannel, outputChannel f.Fi
 	}
 }
 
-func (a Atoi_parallel) VerifyInputChannel(inputChannel f.FilterChannel) bool {
+func (a Atoi_parallel) VerifyInputChannel(inputChannel pipeline.FilterChannel) bool {
 	_, ok := (inputChannel).(chan string)
 	return ok
 }
 
-func (a Atoi_parallel) MakeOutputChannel() f.FilterChannel {
+func (a Atoi_parallel) MakeOutputChannel() pipeline.FilterChannel {
 	return make(chan int, 100)
 }
 

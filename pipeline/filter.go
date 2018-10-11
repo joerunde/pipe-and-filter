@@ -1,4 +1,4 @@
-package filter
+package pipeline
 
 import (
 	"fmt"
@@ -7,8 +7,11 @@ import (
 	"time"
 )
 
+//TODO: obvs make this option configurable
 const MESSAGE_BUFFER_SIZE = 1024
 
+
+//
 type FilterChannel interface{}
 
 type FilterOutput interface{}
@@ -20,13 +23,33 @@ type Filter interface {
 	GetParallelWorkerCount() int
 }
 
-type FilterRunner interface {
+type SourceFilter interface {
+	Run(outputChannel FilterChannel, errorChan chan<- m.Message)
+	MakeOutputChannel() FilterChannel
+	GetParallelWorkerCount() int
+}
+
+type sourceFilterWrapper struct {
+	SourceFilter
+}
+
+func (s sourceFilterWrapper) VerifyInputChannel(inputChannel FilterChannel) bool {
+	return true
+}
+
+func (s sourceFilterWrapper) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- m.Message) {
+	s.SourceFilter.Run(outputChannel, errorChan)
+}
+
+
+
+type filterRunner interface {
 	Start(pipelineStartTimestamp time.Time)
 	GetOutputChan() FilterChannel
 }
 
 type runner struct {
-	FilterRunner
+	filterRunner
 
 	filter                  Filter
 	messageChannel          chan m.Message
@@ -40,7 +63,7 @@ type runner struct {
 	pipelineStart           time.Time
 }
 
-func NewFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan chan m.DecoratedMessage) (FilterRunner, error) {
+func NewFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan chan m.DecoratedMessage) (filterRunner, error) {
 
 	if filter == nil {
 		return nil, fmt.Errorf("Unexpected error from the pipeline: Filter cannot be nil")
@@ -93,6 +116,10 @@ func (r runner) Start(pipelineStartTimestamp time.Time) {
 	go r.decorateMessages()
 }
 
+func (r runner) GetOutputChan() FilterChannel {
+	return r.outputChannel
+}
+
 func (r runner) monitor() {
 	for r.refCount > 0 {
 		<-r.finishedWorkersChannel
@@ -128,10 +155,6 @@ func (r runner) decorateMessages() {
 func (r runner) wrapRun() {
 	r.filter.Run(r.inputChannel, r.outputChannel, r.messageChannel)
 	r.finishedWorkersChannel <- 1
-}
-
-func (r runner) GetOutputChan() FilterChannel {
-	return r.outputChannel
 }
 
 func (r runner) decorateMessage(msg m.Message, source m.MessageSource) m.DecoratedMessage {
