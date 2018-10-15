@@ -28,7 +28,7 @@ func New(input FilterChannel, filters []Filter, listeners []MessageSubscriber) (
 	var err error
 
 	for i, filter := range filters {
-		filterRunners[i], err = NewFilterRunner(filter, nextInputChannel, decoratedMessageChannel)
+		filterRunners[i], err = newFilterRunner(filter, nextInputChannel, decoratedMessageChannel)
 		if err != nil {
 			return nil, err
 		}

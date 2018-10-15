@@ -62,7 +62,7 @@ type runner struct {
 	pipelineStart           time.Time
 }
 
-func NewFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan chan DecoratedMessage) (filterRunner, error) {
+func newFilterRunner(filter Filter, input FilterChannel, decoratedMessageChan chan DecoratedMessage) (filterRunner, error) {
 
 	if filter == nil {
 		return nil, fmt.Errorf("Unexpected error from the pipeline: Filter cannot be nil")
