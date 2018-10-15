@@ -47,16 +47,14 @@ func (p *PipelineTestSuite) TestTwoFilterPipeline() {
 	p.Equal(36, outs[0])
 }
 
-func (p *PipelineTestSuite) TestParallelPipeline() {
+func (p *PipelineTestSuite) TestParallelPipelineSmokeTest() {
 	input := make(chan string, 100)
 
 	pipe, err := New(input, []Filter{filters.Atoi_parallel{}, filters.Doubler{}, filters.Cumulator{}}, []MessageSubscriber{})
 	p.Nil(err)
 
-	i := 0
-	for i < 50 {
+	for i := 0; i < 50; i++ {
 		input <- "1"
-		i += 1
 	}
 	close(input)
 
@@ -123,7 +121,6 @@ func (p *PipelineTestSuite) TestItDecoratesMessagesWithTimestamps() {
 type spyMessageListener struct {
 	mock.Mock
 	messages []DecoratedMessage
-	foobar string
 }
 
 func (s *spyMessageListener) Handle(msg DecoratedMessage) bool {

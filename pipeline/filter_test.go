@@ -33,6 +33,7 @@ func (f *FilterRunnerTestSuite) TestItRejectsWrongInputChannelTypes() {
 	runner, err := NewFilterRunner(f.mock, make(chan interface{}), make(chan DecoratedMessage))
 	f.Nil(runner)
 	f.NotNil(err)
+	f.mock.AssertExpectations(f.T())
 }
 
 func (f *FilterRunnerTestSuite) TestItRejectsWorkerCountsLessThanOne() {
@@ -63,8 +64,30 @@ func (f *FilterRunnerTestSuite) TestItCreatesAFilterRunner() {
 	f.Equal(output, runner.GetOutputChan())
 }
 
+func (f *FilterRunnerTestSuite) TestItRunsAFilterInParallel() {
+	expectedParallelCalls := 100
+	output := make(chan interface{})
+	input := make(chan interface{})
+
+	f.mock.On("VerifyInputChannel").Return(true).Once()
+	f.mock.On("GetParallelWorkerCount").Return(expectedParallelCalls)
+	f.mock.On("MakeOutputChannel").Return(output).Once()
+	f.mock.On("Run").Return().Times(expectedParallelCalls) //This should be called as many times as GetParallelWorkerCount
+
+	runner, err := NewFilterRunner(f.mock, input, make(chan DecoratedMessage, expectedParallelCalls * 2))
+	f.NotNil(runner)
+	f.Nil(err)
+
+	runner.Start(time.Now())
+	close(input)
+	<- output
+
+	f.mock.AssertExpectations(f.T())
+}
+
 func (f *FilterRunnerTestSuite) TestItEatsUnusedInputsAndReportsErrorsForEach() {
 	output := make(chan interface{})
+	f.mock.On("Run").Return()
 	f.mock.On("VerifyInputChannel").Return(true).Once()
 	f.mock.On("GetParallelWorkerCount").Return(1) // Called more times while running
 	f.mock.On("MakeOutputChannel").Return(output).Once()
@@ -103,7 +126,7 @@ type MockFilter struct {
 }
 
 func (m *MockFilter) Run(verifiedInputChan FilterChannel, outputChannel FilterChannel, errorChan chan<- Message) {
-	//args := m.Called()
+	m.Called()
 	return
 }
 
