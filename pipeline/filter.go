@@ -10,7 +10,9 @@ import (
 const MESSAGE_BUFFER_SIZE = 1024
 
 
-//
+// FilterChannel is an empty interface used to define the types of data flowing through the pipeline.
+// The type returned by MakeOutputChannel on one filter is guaranteed to be passed to the next filter's
+// VerifyInputChannel and Run methods.
 type FilterChannel interface{}
 
 type Filter interface {

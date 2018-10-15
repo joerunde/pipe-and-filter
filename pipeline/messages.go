@@ -5,15 +5,27 @@ import (
 	"time"
 )
 
+// The pipeline contains a message bus, which can be written to by any of your filters.
+// Subscribing to messages can be very useful for handling error conditions, or adding operational visibility.
+// For example:
+// - When a remote resource required by a filter is unavailable, you may want to alert a data orchestration service to
+//	place that batch of data back into the pipeline later
+// - If a batch of data has irreconcilable errors caused by bad input, you may want to push a notification to a user to
+//	help them fix the mistakes
+// - For long running or failure-prone pipelines, a subscriber can be used to track the status of batches of data and
+//	provide this to a healthcheck endpoint or heartbeat service
+// - Instrumenting a subscriber with metrics support is a simple way to decouple your business logic from your
+//	operational visibility
+type MessageSubscriber interface {
+	// Handle will be called for all messages written by filters or the pipeline framework
+	// Return true if anything was done with the message, otherwise false
+	Handle(msg DecoratedMessage) bool
+	// TODO: add actual subscriptions :P
+}
+
 type Message interface {
 	error
 	Code() int
-}
-
-type MessageSubscriber interface {
-	// Handle will be called for all messages written by filters
-	// Return true if anything was done with the message, otherwise false
-	Handle(msg DecoratedMessage) bool
 }
 
 // Messages written by the filters will be decorated with some extra information.
